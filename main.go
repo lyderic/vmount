@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -42,6 +43,8 @@ func main() {
 			list()
 		case "-l":
 			list()
+		case "-e":
+			edit()
 		default:
 			log.Fatal("invalid switch!")
 		}
@@ -69,6 +72,30 @@ func veracrypt(args ...string) {
 	cmd.Run()
 }
 
+func edit() {
+	favoriteVolumesPath := filepath.Join(os.Getenv("HOME"), ".config", "VeraCrypt", "Favorite Volumes.xml")
+	if ! exists(favoriteVolumesPath) { // file not found
+		f, err := os.Create(favoriteVolumesPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+    defer f.Close()
+    f.WriteString(template)
+	}
+  cmd := exec.Command("vim", favoriteVolumesPath)
+  cmd.Stdin = os.Stdin
+  cmd.Stdout = os.Stdout
+  cmd.Stderr = os.Stderr
+  cmd.Run()
+
+}
+
+func exists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) { // file not found
+    return false
+  }
+  return true
+}
 type VeraCrypt struct {
 	XMLName   xml.Name  `xml:"VeraCrypt"`
 	Favorites Favorites `xml:"favorites"`
@@ -94,6 +121,7 @@ func list() {
 	var veraCrypt VeraCrypt
 	file, err := os.Open(os.Getenv("HOME") + "/.config/VeraCrypt/Favorite Volumes.xml")
 	if err != nil {
+    log.Println("Maybe you should run: 'vmount -e' to edit the favorite config file")
 		log.Fatal(err)
 	}
 	defer file.Close()
@@ -114,6 +142,12 @@ func list() {
 	}
 	format := setFormat(longestPath)
 	for _, volume := range volumes {
+    if ! exists(volume.Path) {
+      log.Fatalln("ERROR: volume", volume.Path, "not found!")
+    }
+    if ! exists(volume.Mountpoint) {
+      log.Fatalln("ERROR: mountpoint", volume.Mountpoint, "not found!")
+    }
 		err := exec.Command("veracrypt", "--text", "--list",
 			fmt.Sprintf("--slot=%d", volume.Slotnumber)).Run()
 		mounted := "[*]"
@@ -129,3 +163,11 @@ func setFormat(ln int) string {
 	return fmt.Sprintf("%%02d  %%s  %%-%d.%ds  %%s\n", ln, ln)
 
 }
+
+const template = `<?xml version="1.0" encoding="utf-8"?>
+<VeraCrypt>
+  <favorites>
+    <volume mountpoint="/path/to/mountpoint" readonly="0" slotnumber="1" system="0">/path/to/volume</volume>
+  </favorites>
+</VeraCrypt>
+`
