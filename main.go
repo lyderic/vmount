@@ -45,6 +45,9 @@ func main() {
 			list()
 		case "-e":
 			edit()
+    case "-version":
+      fmt.Println(version)
+      return
 		default:
 			log.Fatal("invalid switch!")
 		}
