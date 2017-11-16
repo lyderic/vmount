@@ -2,3 +2,4 @@
 - Add facility to create a volume (veracrypt --create)
 - Better switch handling, use flag package
 - Split into different files for better readability (one file per action)
+- Manage conflicts in case two volumes are configured with the same slot in favorites config file
