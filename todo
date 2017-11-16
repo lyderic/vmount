@@ -1,3 +1,4 @@
+- Possibility to mount only one slot (-m xx should work)
 - Replace '~' with 'os.Getenv("HOME") is favorites config file
 - Add facility to create a volume (veracrypt --create)
 - Better switch handling, use flag package
