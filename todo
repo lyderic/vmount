@@ -1,0 +1,4 @@
+- Replace '~' with 'os.Getenv("HOME") is favorites config file
+- Add facility to create a volume (veracrypt --create)
+- Better switch handling, use flag package
+- Split into different files for better readability (one file per action)
