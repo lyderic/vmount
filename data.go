@@ -4,10 +4,13 @@ import (
 	"encoding/xml"
 )
 
-const version = "0.0.2"
+const version = "0.0.3"
 
 type Configuration struct {
-	FavoritesPath string
+	FavoritesPath       string
+	VeracryptBinaryPath string
+	Editor              string
+	EditorPath          string
 }
 
 var config Configuration

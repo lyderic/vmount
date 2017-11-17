@@ -1,19 +1,16 @@
 package main
 
 import (
-	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 )
 
 func init() {
 	log.SetFlags(log.Lshortfile)
-	config.FavoritesPath = getFavoritesPath()
+	initConfig()
 }
 
 func main() {
@@ -45,9 +42,9 @@ func main() {
 			list()
 		case "-e":
 			edit()
-    case "-version":
-      fmt.Println(version)
-      return
+		case "-version":
+			fmt.Println(version)
+			return
 		default:
 			log.Fatal("invalid switch!")
 		}
@@ -68,7 +65,7 @@ func mountFavorites() {
 
 func veracrypt(args ...string) {
 	args = append([]string{"--text"}, args...)
-	cmd := exec.Command("veracrypt", args...)
+	cmd := exec.Command(config.VeracryptBinaryPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
@@ -84,53 +81,11 @@ func edit() {
 		defer f.Close()
 		f.WriteString(template)
 	}
-	cmd := exec.Command("vim", config.FavoritesPath)
+	cmd := exec.Command(config.EditorPath, config.FavoritesPath)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Run()
-}
-
-func list() {
-	var veraCrypt VeraCrypt
-	file, err := os.Open(config.FavoritesPath)
-	if err != nil {
-		log.Println("Maybe you should run: 'vmount -e' to edit the favorite config file")
-		log.Fatal(err)
-	}
-	defer file.Close()
-	byteval, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	xml.Unmarshal(byteval, &veraCrypt)
-	volumes := veraCrypt.Favorites.Volumes
-	longestPath := 0
-	replacer := strings.NewReplacer(os.Getenv("HOME"), "~")
-	for i := 0; i < len(volumes); i++ {
-		volumes[i].ShortPath = replacer.Replace(volumes[i].Path)
-		volumes[i].ShortMountpoint = replacer.Replace(volumes[i].Mountpoint)
-		if len(volumes[i].ShortPath) > longestPath {
-			longestPath = len(volumes[i].ShortPath)
-		}
-	}
-	format := setFormat(longestPath)
-	for _, volume := range volumes {
-		if !exists(volume.Path) {
-			log.Fatalln("ERROR: volume", volume.Path, "not found!")
-		}
-		if !exists(volume.Mountpoint) {
-			log.Fatalln("ERROR: mountpoint", volume.Mountpoint, "not found!")
-		}
-		err := exec.Command("veracrypt", "--text", "--list",
-			fmt.Sprintf("--slot=%d", volume.Slotnumber)).Run()
-		mounted := "[*]"
-		if err != nil {
-			mounted = "[ ]"
-		}
-		fmt.Printf(format, volume.Slotnumber, mounted,
-			volume.ShortPath, volume.ShortMountpoint)
-	}
 }
 
 func setFormat(ln int) string {
