@@ -22,7 +22,7 @@ func main() {
 		list()
 	default:
 		switch os.Args[1] {
-		case "-d":
+		case "-d","--dismount":
 			switch ln {
 			case 2:
 				dismountAll()
@@ -35,16 +35,18 @@ func main() {
 			default:
 				log.Fatal("invalid argument to -d switch")
 			}
-		case "-m":
+		case "-m", "--mount":
 			mountFavorites()
 			list()
-		case "-l":
+		case "-l", "--list":
 			list()
-		case "-e":
+		case "-e", "--edit":
 			edit()
-		case "-version":
+		case "-version", "--version":
 			fmt.Println(version)
 			return
+    case "-h","-help", "--help":
+      usage()
 		default:
 			log.Fatal("invalid switch!")
 		}
