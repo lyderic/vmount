@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -15,42 +16,49 @@ func init() {
 
 func main() {
 	ln := len(os.Args)
-	switch ln {
-	case 0:
-		log.Fatal("ERROR")
-	case 1:
+	if ln == 1 { // default action
 		list()
-	default:
-		switch os.Args[1] {
-		case "-d","--dismount":
-			switch ln {
-			case 2:
-				dismountAll()
-			case 3:
-				slot, err := strconv.Atoi(os.Args[2])
-				if err != nil {
-					log.Fatal(err)
-				}
-				dismountSlot(slot)
-			default:
-				log.Fatal("invalid argument to -d switch")
-			}
-		case "-m", "--mount":
-			mountFavorites()
-			list()
-		case "-l", "--list":
-			list()
-		case "-e", "--edit":
-			edit()
-		case "-version", "--version":
-			fmt.Println(version)
-			return
-    case "-h","-help", "--help":
-      usage()
-		default:
-			log.Fatal("invalid switch!")
-		}
+		return
 	}
+	var doList, doEdit, doMount, showVersion bool
+	var slotNumberString string
+	flag.BoolVar(&doList, "l", false, "list favorites")
+	flag.BoolVar(&doMount, "m", false, "mount all favorites")
+	flag.StringVar(&slotNumberString, "d", "--unset--", "dismount slot # (0=all)")
+	flag.BoolVar(&doEdit, "e", false, "edit favorites XML configuration")
+	flag.BoolVar(&showVersion, "version", false, "show version")
+	flag.Parse()
+
+	if doList {
+		list()
+		return
+	}
+	if doMount {
+		mountFavorites()
+		list()
+		return
+	}
+	if doEdit {
+		edit()
+		return
+	}
+	if slotNumberString != "--unset--" {
+    log.Println(">>>", flag.Args(), flag.NArg())
+		slotNumber, err := strconv.Atoi(slotNumberString)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if slotNumber == 0 {
+			dismountAll()
+		} else {
+			dismountSlot(slotNumber)
+		}
+    return
+	}
+  if showVersion {
+    fmt.Println(version)
+    return
+  }
 }
 
 func dismountAll() {
